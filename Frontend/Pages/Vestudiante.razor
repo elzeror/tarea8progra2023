@@ -1,0 +1,155 @@
+@page "/estudiante"
+@using Frontend.Data
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject IHttpClientFactory ClientFactory
+
+<h1>Formulario Estudiantes</h1>
+
+@if (getEstudianteError || iestudiante is null)
+{
+    <p>Error al conectar.</p>
+}
+else
+{
+
+        <form>
+        <label for="lbl_idestudiante" class="form-label">ID</label>
+        <input @bind="var_idestudiante"type="text" class="form-control" readonly>
+        <label for="lbl_carne" class="form-label">Carne</label>
+        <input @bind="var_carne" type="text" class="form-control">
+        <label for="lbl_nombres" class="form-label">Nombres</label>
+        <input @bind="var_nombres" type="text" class="form-control">
+        <label for="lbl_apellidos" class="form-label">Apellidos</label>
+        <input @bind="var_apellidos" type="text" class="form-control">
+        <label for="lbl_direccion" class="form-label">Direccion</label>
+        <input @bind="var_direccion" type="text" class="form-control">
+        <label for="lbl_telefono" class="form-label">Telefono</label>
+        <input @bind=" var_telefono" type="text" class="form-control">
+        <label for="lbl_correo" class="form-label">Correo</label>
+        <input @bind="var_correo" type="text" class="form-control">
+        <label for="lbl_tipoS" class="form-label">Tipo de Sangre</label>
+        <input @bind="var_idsangre" type="text" class="form-control">
+        <label for="lbl_fecha" class="form-label">Fecha de Nacimiento</label>
+        <input @bind="var_fecha" type="date" class="form-control">
+        <br>
+        <button type="button" @onclick="Crear" class="btn btn-info">Ingresar</button>
+        <button type="button" @onclick="Actualizar" class="btn btn-success">Modificar</button>
+        <button type="button" @onclick="Eliminar" class="btn btn-danger">Eliminar</button>
+    </form>
+     
+    
+
+    <table class="table">
+    <tbody>
+        <tr>
+            <th></th>
+            <th>Carne</th>
+            <th>Nombres</th>
+            <th>Apellidos</th>
+            <th>Direccion</th>
+            <th>Telefono</th>
+            <th>Correo</th>
+            <th>Id_Sangre</th>
+            <th>Fecha de Nacimiento</th>
+        </tr>
+    </tbody>
+        @foreach (var estudiante in iestudiante)
+        {
+            <tr>
+            <td><button type="button" @onclick="(() => enviarParametros(estudiante.Id_estudiante,estudiante.Carne,estudiante.Nombres,estudiante.Apellidos,estudiante.Direccion,estudiante.Telefono,estudiante.Correo,estudiante.Id_sangre,estudiante.Fecha_nacimiento))" class="btn btn-info"><i class="oi oi-brush"></i></button></td>
+            <td>@estudiante.Carne</td>
+            <td>@estudiante.Nombres</td>
+            <td>@estudiante.Apellidos</td>
+            <td>@estudiante.Direccion</td>
+            <td>@estudiante.Telefono</td>
+            <td>@estudiante.Correo</td>
+            <td>@estudiante.Id_sangre</td>
+            <td>@estudiante.Fecha_nacimiento</td> 
+            </tr>
+            
+        }
+    </table>
+}
+
+@code {
+    // Variable global
+    private string? url = "https://localhost:7222/api/Estudiantes";
+
+    private Int32 var_idestudiante, var_idsangre;
+    private string? var_carne, var_nombres, var_apellidos, var_direccion, var_telefono, var_correo;
+    private DateTime? var_fecha;
+
+    private IEnumerable<Estudiante>? iestudiante = Array.Empty<Estudiante>();
+
+    private bool getEstudianteError;
+
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+
+    // Enviar parametros
+    void enviarParametros(Int32 id, string? car, string? nom, string? apell, string? dire, string? tel, string? cor,Int32 idS,DateTime? fn){
+        var_idestudiante = id;
+        var_carne = car;
+        var_nombres = nom;
+        var_apellidos = apell;
+        var_direccion = dire;
+        var_telefono = tel;
+        var_correo = cor;
+        var_idsangre = idS;
+        var_fecha = fn;
+    }
+    // Ingresar
+    private async Task Crear()
+    {
+        var client = ClientFactory.CreateClient();
+        var AddItem = new Estudiante {Id_estudiante=var_idestudiante, Carne=var_carne, Nombres=var_nombres, Apellidos=var_apellidos, Direccion=var_direccion, Telefono=var_telefono, Correo=var_correo, Id_sangre=var_idsangre, Fecha_nacimiento=var_fecha};
+        await client.PostAsJsonAsync(url, AddItem);
+        await OnInitializedAsync();
+    }
+    // Actualizar
+    private async Task Actualizar()
+    {
+        var client = ClientFactory.CreateClient();
+        var AddItem = new Estudiante {Id_estudiante=var_idestudiante, Carne=var_carne, Nombres=var_nombres, Apellidos=var_apellidos, Direccion=var_direccion, Telefono=var_telefono, Correo=var_correo, Id_sangre=var_idsangre, Fecha_nacimiento=var_fecha};
+        await client.PutAsJsonAsync($"{url}/{var_idestudiante}", AddItem);
+        await OnInitializedAsync();
+    }
+    // Eliminar 
+    private async Task Eliminar()
+    {
+        var client = ClientFactory.CreateClient();
+        await client.DeleteAsync($"{url}/{var_idestudiante}");
+        await OnInitializedAsync();
+    }
+    // Leer
+    protected override async Task OnInitializedAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            url);
+        request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+
+            iestudiante = await JsonSerializer.DeserializeAsync
+
+                <IEnumerable<Estudiante>>(responseStream);
+        }
+        else
+        {
+            getEstudianteError = true;
+        }
+
+        shouldRender = true;
+    }
+
+   
+}

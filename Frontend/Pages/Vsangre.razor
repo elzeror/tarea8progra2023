@@ -1,0 +1,87 @@
+@page "/sangre"
+@using Frontend.Data
+@using System.Text.Json
+@using System.Text.Json.Serialization
+@inject IHttpClientFactory ClientFactory
+
+<h1>Tipos de Sangre</h1>
+
+@if (getSangreError || isangre is null)
+{
+    <p>Error al conectar.</p>
+}
+else
+{
+    <form>
+        <label for="lbl_sangre" class="form-label">Tipo de Sangre</label>
+        <input @bind="var_sangre"type="text" class="form-control">
+        <br>
+        <button type="button" @onclick="Crear2" class="btn btn-info">Ingresar</button>
+    </form>
+    <table class="table">
+    <tbody>
+        <tr>
+            <th>ID</th>
+            <th>Sangre</th>
+        </tr>
+    </tbody>
+        @foreach (var sangre in isangre)
+        {
+            <tr>
+            <td>@sangre.Id_tipo_sangre</td>
+            <td>@sangre.Sangres</td>
+            </tr>
+            
+        }
+    </table>
+}
+
+@code {
+    // Variables Globales
+    private string? url2 = "https://localhost:7222/api/Sangres";
+    private string? var_sangre;
+
+    private IEnumerable<Sangre>? isangre = Array.Empty<Sangre>();
+
+    private bool getSangreError;
+
+    private bool shouldRender;
+
+    protected override bool ShouldRender() => shouldRender;
+    // Ingresar
+     private async Task Crear2()
+    {
+        var client = ClientFactory.CreateClient();
+        var AddItem = new Sangre {Sangres=var_sangre};
+        await client.PostAsJsonAsync(url2, AddItem);
+        await OnInitializedAsync();
+    }
+    // Leer
+    protected override async Task OnInitializedAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Get,
+            url2);
+        request.Headers.Add("Accept", "application/vnd.github.v3+json");
+        request.Headers.Add("User-Agent", "HttpClientFactory-Sample");
+
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        if (response.IsSuccessStatusCode)
+        {
+            using var responseStream = await response.Content.ReadAsStreamAsync();
+
+            isangre = await JsonSerializer.DeserializeAsync
+
+                <IEnumerable<Sangre>>(responseStream);
+        }
+        else
+        {
+            getSangreError = true;
+        }
+
+        shouldRender = true;
+    }
+
+}
